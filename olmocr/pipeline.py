@@ -280,7 +280,11 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 api_key = args.api_key
             else:
                 api_key = None
-            status_code, response_body = await apost(COMPLETION_URL, json_data=query, api_key=api_key)
+            # Conditionally pass api_key parameter
+            if api_key is not None:
+                status_code, response_body = await apost(COMPLETION_URL, json_data=query, api_key=api_key)
+            else:
+                status_code, response_body = await apost(COMPLETION_URL, json_data=query)
 
             if status_code == 400:
                 raise ValueError(f"Got BadRequestError from server: {response_body}, skipping this response")
