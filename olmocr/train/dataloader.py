@@ -8,18 +8,7 @@ from dataclasses import dataclass, fields
 from io import BytesIO
 from os import PathLike
 from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeAlias,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeAlias, Union, get_args, get_origin
 
 import numpy as np
 import yaml
