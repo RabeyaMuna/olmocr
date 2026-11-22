@@ -9,7 +9,7 @@ import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import boto3
 import zstandard
@@ -50,9 +50,12 @@ def is_debugging():
 # Create a hash to store file contents and check for changes
 def compute_file_hash(file_path: str) -> str:
     hash_md5 = hashlib.md5()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
+    try:
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+    except IOError as e:
+        raise RuntimeError(f"Failed to compute file hash: {e}")
     return hash_md5.hexdigest()
 
 
@@ -185,12 +188,12 @@ def load_gold_data(gold_data_path: str, max_workers: int = 8) -> dict:
                 total_errors += file_errors
                 total_overruns += file_overruns
             except Exception as e:
-                print(f"Error processing a file: {e}")
+                logging.error(f"Error processing a file: {e}")
 
-    print(f"Loaded {len(gold_data):,} gold data entries for comparison")
-    print(f"Gold processing errors: {total_errors}")
-    print(f"Gold overrun errors: {total_overruns}")
-    print("-----------------------------------------------------------")
+    logging.info(f"Loaded {len(gold_data):,} gold data entries for comparison")
+    logging.info(f"Gold processing errors: {total_errors}")
+    logging.info(f"Gold overrun errors: {total_overruns}")
+    logging.info("-----------------------------------------------------------")
 
     return gold_data
 
@@ -294,7 +297,7 @@ def do_eval(gold_data_path: str, eval_data_path: str, review_page_name: str, rev
     if not jsonl_files:
         raise ValueError("No .jsonl files found in the specified path.")
 
-    print(f"Found {len(jsonl_files):,} files to evaluate")
+    logging.info(f"Found {len(jsonl_files):,} files to evaluate")
 
     with ProcessPoolExecutor() if not is_debugging() else ThreadPoolExecutor() as executor:
         # Prepare the future tasks
@@ -311,29 +314,18 @@ def do_eval(gold_data_path: str, eval_data_path: str, review_page_name: str, rev
             total_pages += pages
             total_errors += errors
             total_overruns += overruns
-            total_pages_compared |= page_data.keys()
+            total_pages_compared.update(page_data.keys())
 
             # Generate the eval data
-            for pd_key, pd in page_data.items():
-                # if pd["alignment"] > 0.97:
-                #     continue
-
-                # if len(pd["gold_text"]) < 200 and len(pd["eval_text"]) < 200:
-                #     continue
-                # if "[Error processing this page: overrun" not in pd["eval_text"]:
-                #     continue
-
+            for pd in page_data.values():
                 page_eval_data.append(pd)
 
-    print(f"Compared {len(total_pages_compared):,} pages")
-    print(f"Found {total_errors} errors in the eval set, and {total_overruns} cases of length overruns")
-    print(f"Mean page-weighted alignment: {total_alignment_score / total_pages:.3f}")
-    print(f"Mean char-weighted alignment: {total_char_alignment_score / total_weight:.3f}")
-    print("")
-    print("...creating review page")
-
-    # TODO Temporary filter to see other stuff
-    # page_eval_data = [x for x in page_eval_data if "NO ENGLISH TEXT" not in x["gold_text"]]
+    logging.info(f"Compared {len(total_pages_compared):,} pages")
+    logging.info(f"Found {total_errors} errors in the eval set, and {total_overruns} cases of length overruns")
+    logging.info(f"Mean page-weighted alignment: {total_alignment_score / total_pages:.3f}")
+    logging.info(f"Mean char-weighted alignment: {total_char_alignment_score / total_weight:.3f}")
+    logging.info("")
+    logging.info("...creating review page")
 
     # Select the top 20 lowest alignments
     page_eval_data.sort(key=lambda x: x["alignment"])

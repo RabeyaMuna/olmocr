@@ -1,16 +1,6 @@
 import re
-from typing import (
-    Callable,
-    Dict,
-    Generator,
-    Generic,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    overload,
-)
+from collections.abc import Callable, Generator
+from typing import Generic, Literal, Optional, TypeVar, overload
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -19,8 +9,8 @@ R = TypeVar("R")
 class BaseRegistry(Generic[T]):
     """A registry for objects."""
 
-    _registry_of_registries: Dict[str, Type["BaseRegistry"]] = {}
-    _registry_storage: Dict[str, Tuple[T, Optional[str]]]
+    _registry_of_registries: dict[str, type["BaseRegistry"]] = {}
+    _registry_storage: dict[str, tuple[T, Optional[str]]]
 
     @classmethod
     def _add_to_registry_of_registries(cls) -> None:
@@ -29,23 +19,23 @@ class BaseRegistry(Generic[T]):
             cls._registry_of_registries[name] = cls
 
     @classmethod
-    def registries(cls) -> Generator[Tuple[str, Type["BaseRegistry"]], None, None]:
+    def registries(cls) -> Generator[tuple[str, type["BaseRegistry"]], None, None]:
         """Yield all registries in the registry of registries."""
         yield from sorted(cls._registry_of_registries.items())
 
     @classmethod
-    def _get_storage(cls) -> Dict[str, Tuple[T, Optional[str]]]:
+    def _get_storage(cls) -> dict[str, tuple[T, Optional[str]]]:
         if not hasattr(cls, "_registry_storage"):
             cls._registry_storage = {}
         return cls._registry_storage  # pyright: ignore
 
     @classmethod
-    def items(cls) -> Generator[Tuple[str, T], None, None]:
+    def items(cls) -> Generator[tuple[str, T], None, None]:
         """Yield all items in the registry."""
         yield from sorted((n, t) for (n, (t, _)) in cls._get_storage().items())
 
     @classmethod
-    def items_with_description(cls) -> Generator[Tuple[str, T, Optional[str]], None, None]:
+    def items_with_description(cls) -> Generator[tuple[str, T, Optional[str]], None, None]:
         """Yield all items in the registry with their descriptions."""
         yield from sorted((n, t, d) for (n, (t, d)) in cls._get_storage().items())
 
@@ -60,7 +50,7 @@ class BaseRegistry(Generic[T]):
             inner_self: T,
             inner_name: str = name,
             inner_desc: Optional[str] = desc,
-            inner_cls: Type[BaseRegistry] = cls,
+            inner_cls: type[BaseRegistry] = cls,
         ) -> T:
             """Add a tagger to the registry using tagger_name as the name."""
 

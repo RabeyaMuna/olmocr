@@ -36,12 +36,16 @@ class BaseTextAlignMetric(BaseTextMetric):
         self,
         segmenter: str | BaseSegmenter,
         aligner: str | BaseAligner = "hirschberg",
-        aligner_kwargs: dict = {},
-        segmenter_kwargs: dict = {},
+        aligner_kwargs: dict = None,
+        segmenter_kwargs: dict = None,
         gap_token: str = "▓",
         *args,
         **kwargs,
     ):
+        if aligner_kwargs is None:
+            aligner_kwargs = {}
+        if segmenter_kwargs is None:
+            segmenter_kwargs = {}
         if isinstance(segmenter, str):
             self.segmenter = SegmenterRegistry.get(segmenter)(segmenter, **segmenter_kwargs)
         else:
@@ -189,14 +193,18 @@ class ParagraphEditSimilarity(DocumentEditSimilarity):
         self,
         segmenter: str | BaseSegmenter,
         aligner: str | BaseAligner = "hirschberg",
-        aligner_kwargs: dict = {},
-        segmenter_kwargs: dict = {},
+        aligner_kwargs: dict = None,
+        segmenter_kwargs: dict = None,
         gap_token: str = "▓",
         gap_threshold: int = 3,
         sent_window: int = 1,
         *args,
         **kwargs,
     ):
+        if aligner_kwargs is None:
+            aligner_kwargs = {}
+        if segmenter_kwargs is None:
+            segmenter_kwargs = {}
         super().__init__(
             segmenter=segmenter,
             aligner=aligner,

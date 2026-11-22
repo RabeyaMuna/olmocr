@@ -1,4 +1,4 @@
-from typing import Type
+from builtins import type
 
 from spacy.lang.en import English
 
