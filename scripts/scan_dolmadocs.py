@@ -10,7 +10,7 @@ import sqlite3
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import boto3
 import requests
@@ -67,7 +67,7 @@ def deobfuscate_code(obfuscated_code):
     reversed_encoded = obfuscated_code[::-1]
     try:
         return base64.b64decode(reversed_encoded).decode()
-    except:
+    except (base64.binascii.Error, UnicodeDecodeError):
         return "ERROR_DECODING"
 
 
@@ -79,7 +79,7 @@ def parse_pdf_hash(pretty_pdf_path: str) -> Optional[str]:
     return None
 
 
-def get_original_url(pdf_hash: str, db_path: str) -> Optional[str]:
+def get_original_url(pdf_hash: str, db_path: str) -> str | None:
     """Look up the original URL for a PDF hash in the SQLite database."""
     if not pdf_hash:
         return None
@@ -101,7 +101,7 @@ def get_original_url(pdf_hash: str, db_path: str) -> Optional[str]:
         if result:
             return result[0]
         return None
-    except Exception as e:
+    except (sqlite3.Error, OSError) as e:
         print(f"Error looking up URL for PDF hash {pdf_hash}: {e}")
         return None
 
@@ -184,7 +184,7 @@ def get_random_pages(s3_client, result_files, count=30):
                 if len(random_pages) >= count:
                     break
 
-        except Exception as e:
+        except (json.JSONDecodeError, UnicodeDecodeError, KeyError, IndexError) as e:
             print(f"Error processing {result_file}: {e}")
             continue
 
@@ -198,7 +198,7 @@ def create_presigned_url(s3_client, pdf_path, expiration=3600 * 24 * 7):
         bucket, key = parse_s3_path(pdf_path)
         url = s3_client.generate_presigned_url("get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=expiration)
         return url
-    except Exception as e:
+    except (ValueError, botocore.exceptions.ClientError) as e:
         print(f"Error creating presigned URL for {pdf_path}: {e}")
         return None
 

@@ -9,7 +9,6 @@ import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import boto3
 import zstandard
@@ -147,11 +146,11 @@ def load_gold_data(gold_data_path: str, max_workers: int = 8) -> dict:
     if not os.path.exists(CACHE_DIR):
         os.makedirs(CACHE_DIR)
 
-    gold_data: Dict[str, str] = {}
+    gold_data: dict[str, str] = {}
     total_errors = 0
     total_overruns = 0
 
-    gold_jsonl_files: List[str] = list_jsonl_files(gold_data_path)
+    gold_jsonl_files: list[str] = list_jsonl_files(gold_data_path)
 
     def process_file(path: str) -> tuple:
         """Process a single JSONL file and return its data and error counts."""
@@ -184,7 +183,7 @@ def load_gold_data(gold_data_path: str, max_workers: int = 8) -> dict:
                 gold_data.update(file_gold_data)
                 total_errors += file_errors
                 total_overruns += file_overruns
-            except Exception as e:
+            except (FileNotFoundError, json.JSONDecodeError) as e:
                 print(f"Error processing a file: {e}")
 
     print(f"Loaded {len(gold_data):,} gold data entries for comparison")

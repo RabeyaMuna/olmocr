@@ -18,7 +18,6 @@ import argparse
 import re
 import shutil
 from pathlib import Path
-from typing import Set, Tuple
 
 from tqdm import tqdm
 
@@ -46,7 +45,7 @@ def parse_deny_list(deny_list_file: Path) -> Set[Tuple[str, str]]:
     return patterns
 
 
-def find_matching_files(processed_dir: Path, deny_patterns: Set[Tuple[str, str]]) -> list[Path]:
+def find_matching_files(processed_dir: Path, deny_patterns: set[tuple[str, str]]) -> list[Path]:
     """Find all files that match the deny patterns."""
     matching_files = []
 
@@ -78,7 +77,7 @@ def find_matching_files(processed_dir: Path, deny_patterns: Set[Tuple[str, str]]
                     # Check if this (subdir, base_filename) pair is in our deny set
                     if (subdir, base_filename) in deny_patterns:
                         matching_files.append(file_path)
-        except Exception as e:
+        except (ValueError, RuntimeError) as e:
             print(f"Warning: Could not process file {file_path}: {e}")
 
     return matching_files
@@ -103,7 +102,7 @@ def move_files_to_rejected(files_to_move: list[Path], processed_dir: Path, rejec
             shutil.move(str(file_path), str(target_path))
             print(f"Moved: {file_path} -> {target_path}")
             moved_count += 1
-        except Exception as e:
+        except (OSError, shutil.Error) as e:
             print(f"Error moving {file_path}: {e}")
 
     return moved_count
